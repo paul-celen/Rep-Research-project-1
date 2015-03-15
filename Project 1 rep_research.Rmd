@@ -1,0 +1,153 @@
+---
+title: "Activity Monitoring Data"
+output: html_document
+---
+
+
+### table of content
+
+
+- part 1: Mean total number of steps of taken per day
+- part 2: Average daily activity pattern
+- part 3: dataset with missing value
+- part 4: difference weekdays and weekend
+
+
+
+
+```{r Obtain data, echo=TRUE}
+# Read data Activity dataset        
+        path <- "C:/Users/vobis/Desktop/Coursera/5. Reproducible Resreach/project 1"
+        name <- "activity.csv"
+        dt_activity <- data.frame()
+        dt_activity <- read.csv(paste(path, name, sep="/"), sep = ",")
+```
+
+#### part 1: Mean total number of steps of taken per day
+
+
+
+```{r Part 1 Mean total step by day, echo=TRUE}
+# Part 1 - Plot and mead/Medain off step by day      
+        # Copy data.frame in new data.frame
+                dt_activity_1 <- dt_activity        
+        # Subset, exclude NA rows. 
+                dt_activity_1 <- dt_activity_1[complete.cases(dt_activity_1),]
+        # aggrate by day
+                dt_steps_by_day <- as.data.frame(xtabs(steps ~ date  , dt_activity_1))      
+        # plot Histogram        
+                hist(dt_steps_by_day$Freq )
+        # Calcualete mean and Median
+                mean_activity_1 <- mean (dt_steps_by_day$Freq)
+                median_activity_1 <- median(dt_steps_by_day$Freq)
+
+        print(c("Mean:", round(mean_activity_1,2) ,"Median : " , round(median_activity_1,2)))
+```
+
+#### part 2: Average daily activity pattern
+
+
+```{r Average daily Activity pattern, echo=TRUE}
+# Part 2 - plot average 5 Min interval
+        # Copy data.frame in new data.frame, keep raw date original 
+                dt_activity_2 <- dt_activity        
+        # Subset, exclude NA rows. 
+                dt_activity_2 <- dt_activity_2[complete.cases(dt_activity_2),]
+        # aggrate by day by mean
+                dt_steps_by_day2 <- as.data.frame(aggregate(dt_activity_2$steps, by=list(dt_activity_2$interval), FUN=mean, data = dt_activity_2 ))
+        # Max Value of mean
+                maxvalue <- max(dt_steps_by_day2$x)
+                dt_steps_by_day2_max <- dt_steps_by_day2[dt_steps_by_day2$x ==  maxvalue, 1]
+        # plot
+                plot_part2 <- plot(x=dt_steps_by_day2$Group.1 , y= dt_steps_by_day2$x , type = "l", main = "Average steps taken for each 5 min interval, Missing value are excluded")
+                text_part2 <- paste("On average, in the next 5 min interval the most steps were taken;", round(dt_steps_by_day2_max,2), ", with ", round(maxvalue,2) ,sep = " ")
+
+                print(text_part2)
+                # additional comment. 
+                print("Between8 and 9 in the morning, the most steps are taken")
+
+```
+
+
+
+#### part 3: dataset with missing value
+
+
+
+```{r Dateset with missing value, echo=TRUE}
+# part 3 - missing Value's
+
+        # report number of missing NA, create new date to keep raw date original
+        # and count number of row with missing data
+                dt_activity_na <- dt_activity[is.na(dt_activity[,1]),]
+                missing_na <- length(dt_activity_na[,1])
+        # filing in missing Value's
+                # value for missing values
+                        mean_not_missing <- mean(dt_activity_1[complete.cases(dt_activity_1),1])
+                # replece NA's with mean, create new dt for replaced data, so raw date will be original 
+                        dt_replace_na <- dt_activity
+                        dt_replace_na[is.na(dt_replace_na[,1]),1] <- mean_not_missing
+
+        # Mean and Medain steps by each day
+                        dt_steps_by_day_replaced_na <- as.data.frame(xtabs(steps ~ date  , dt_replace_na))      
+        # Calcualete mean and Median, and max
+                mean_activity_replaced_na <- mean (dt_steps_by_day_replaced_na$Freq)
+                median_activity_replaced_na <- median(dt_steps_by_day_replaced_na$Freq)
+                
+        # plot average 5 min interval
+                # aggrate by day, mean
+                        dt_replace_na_agg <- as.data.frame(aggregate(dt_replace_na$steps, by=list(dt_replace_na$interval), FUN=mean, data = dt_replace_na))
+
+                        max_activity_replaced_na <- max(dt_replace_na_agg$x)
+                # text output - Part 1
+                        text_part3_1_1 <- paste("Total number of NA, " , missing_na , sep = "")
+                        text_part3_1_2 <- paste("Total missing rows, is" , round(missing_na/17568,2)*100 , "% of all observatoins" , sep = "")
+                                
+                                print(text_part3_1_1)
+                                print(text_part3_1_2)
+                # plot
+                        plot(x=dt_replace_na_agg$Group.1 , y= dt_replace_na_agg$x , type = "l", main = "Average steps taken for each 5 min interval, Missing value are replaced")
+
+                # text output - Part 2
+                        text_part3_2 <- paste("NA replaced with mean steps(exclude NA)", round(mean_not_missing,2) ,sep = "")
+                        text_part3_3 <- paste("Ater replace NA with mean, mean; ", round(mean_activity_replaced_na,2), " and median; ", round(median_activity_replaced_na,2) , "  number steps in highest interval; " , round(max_activity_replaced_na,2) , sep = "")     
+                                print(text_part3_2)
+                                print(text_part3_3)
+
+                # text output - Part 3 [difference between exclude and replace]
+                        Diff_mean <- round(mean_activity_replaced_na - mean_activity_1,0)
+                        Diff_median <-round(median_activity_replaced_na - median_activity_1,0)
+                        Diff_max <- round(max_activity_replaced_na - maxvalue,0)
+                        text_part3_4 <- paste("Difference mean: ", Diff_mean , " | Difference median:" , Diff_median, " | Difference max steps in interval" , Diff_max ,  sep = "")
+                        print(text_part3_4)
+                        print("Due replacing Missing value, instead of exclude then, 13% of the total. The next things are changed;                              1. The patron on the plots look the same, only the y scale is less high. The highest number steps in an interval has drop with 22                              2. The mean and median has raised")
+        
+        ```
+
+####  part 4: difference weekdays and weekend
+
+
+
+```{r Difference weekdays and weekendays, echo=TRUE }
+# part 4 - week /  weekend days
+
+        # Add day name to data.frame
+                dt_replace_na$day <- weekdays(as.Date(dt_replace_na$date), abbreviate = FALSE)
+        # split dataset into weekday and weekenddays
+                weekend  <- dt_replace_na[dt_replace_na$day %in% c("zaterdag","zondag"),]
+                week     <- dt_replace_na[!(dt_replace_na$day %in% c("zaterdag","zondag")),]
+        # aggrate by day, by mean
+                dt_replace_na1_weekend <- as.data.frame(aggregate(weekend$steps, by=list(weekend$interval), FUN=mean, data = weekend ))
+                dt_replace_na1_week <- as.data.frame(aggregate(week$steps, by=list(week$interval), FUN=mean, data = week ))
+        # plot
+                par(mfrow = c(2,1))
+                plot(x=dt_replace_na1_weekend$Group.1 , y = dt_replace_na1_weekend$x , type = "l", main = "Weekend")
+                plot(x=dt_replace_na1_week$Group.1 , y = dt_replace_na1_week$x , type = "l", main = "Week")
+
+```
+
+
+Difference between week and weekends.
+
+1. During the week, their is one big pike between 8 and 9 in the morning. In the weekend is more spread over the day. 
+
